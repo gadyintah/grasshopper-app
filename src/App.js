@@ -15,9 +15,9 @@ function App() {
     3: "Thirdly, I hope we can have fun catching up and reminiscing about old times while also looking forward to new opportunities ahead.",
     4: "Fourth, tama na ng default messages, let's get to the point na. I hope this little app brings a smile to your face and reminds you of the good times we've shared over the years especially nung una kahit di na natin ma alala most of it",
     5: "Fifth would be sana we can continue to stay in touch even after we meet. Hoping it won't be the first and last time.",
-    6: "I remember you calling young grasshoper kasi I believe it was the time na nanunuod ako ng Star Wars nun and young padawan dapat yun. Pero I guess grasshopper is cooler and much more appropriate for someone who's always learning and growing such as yourself.",
+    6: "I remember calling you young grasshoper kasi I believe it was the time na nanunuod ako ng Star Wars nun and young padawan dapat yun. Pero I guess grasshopper is cooler and much more appropriate for someone who's always learning and growing such as yourself.",
     7: "Lucky number 7: My wish for you kahit di mo pa birthday is that kahit di tayo always nagkakausap or nagkikita, sana lagi kang maging masaya at matagumpay sa lahat ng iyong endeavors. You deserve nothing but the best. We all do.",
-    8: "Eight message would be, I guess itigil ko na yung pag count kasi may number naman sa page so, last na ata to para di na din ako mag type ng sobra at ayon na nga nag explain na si ferson. Hahahaha. Pero yun nga, san we can continue to stay in touch and make more memories together in the future.",
+    8: "Eight message would be, I guess itigil ko na yung pag count kasi may number naman sa page so, last na ata to para di na din ako mag type ng sobra at ayon na nga nag explain na si ferson. Hahahaha. Pero yun nga, sana we can continue to stay in touch and make more memories together in the future.",
     9: "After our first meeting in more than 7 years, I hope we can look back on this day as a special moment in our friendship and relationship. Parang lucky 7 today. Hahaha. Historical Even ulit.",
     10: "I liked talking to you before as far as I can remember kasi you were genuine nga, today I'd say nonchalant so parang you're great to talk to and kahit nagalit ka sa MOMO, kinausap mo pa din ako and sana napatawad mo na talaga ako. Hahahaha",
     11: "Prime number 11, I like this number kasi it's unique and special just like our friendship. Sana we can continue to nurture and grow our bond over time. It's okay kahit staggered or intermittent basta we still do. Life gets busy after all.",
@@ -30,7 +30,7 @@ function App() {
     18: "Pero again about you na na aalala ko, you were so interactive before and kahit na we had our indifferences, you still made an effort to reach out and connect with me. I appreciate that a lot.",
     19: "You were also very pretty sa kada selfies mo na naaalala ko, sana ganun pa din ngayon. Hahahaha. Kidding aside, I hope you continue to embrace your unique beauty and personality because that's what makes you special, Juarez. Beauty, brains, and kindness in one package.",
     20: "Dapat 18 lang eh kasi 18 ang debut ng female sa Pilipinas pero sige na nga 21 na to para pantay tayo. Hahahaha. You made an effort before, let me try making mine now.",
-    21: "Final message: Thank you for taking the time to meet with me today and for being a part of my life. I hope we can continue to stay in touch and make more memories together in the future. Happy Birthday once again, Juarez! 🎉🎂🎁"
+    21: "Final message: Thank you for taking the time to meet with me today and for being a part of my life. I hope we can continue to stay in touch and make more memories together in the future. Advance Happy Birthday once again, Juarez! 🎉🎂🎁"
   };
 
   // Load progress from localStorage on component mount
@@ -53,26 +53,48 @@ function App() {
   }, [completedBullets, nextBullet]);
 
   const openModal = (bulletNumber) => {
-    // Only allow clicking the next bullet in sequence
-    if (bulletNumber === nextBullet) {
+    // Allow clicking if it's the next bullet OR if it's already completed
+    if (bulletNumber === nextBullet || completedBullets.includes(bulletNumber)) {
       setCurrentBullet(bulletNumber);
       setIsModalOpen(true);
+      
+      // If it's the next bullet and not completed, mark it as completed
+      if (bulletNumber === nextBullet && !completedBullets.includes(bulletNumber)) {
+        setCompletedBullets(prev => [...prev, bulletNumber]);
+        setNextBullet(prev => Math.min(prev + 1, 22));
+      }
     }
   };
 
   const closeModal = () => {
-    if (currentBullet) {
-      // Mark current bullet as completed and set next bullet
-      setCompletedBullets(prev => [...prev, currentBullet]);
-      setNextBullet(prev => prev + 1);
-    }
     setIsModalOpen(false);
     setCurrentBullet(null);
+  };
+
+  const goToNext = () => {
+    if (currentBullet < 21) {
+      const next = currentBullet + 1;
+      setCurrentBullet(next);
+      
+      // Auto-mark as completed when navigating through modals if it's the next in sequence
+      if (!completedBullets.includes(next) && next <= nextBullet) {
+        setCompletedBullets(prev => [...prev, next]);
+        setNextBullet(prev => Math.min(prev + 1, 22));
+      }
+    }
+  };
+
+  const goToPrevious = () => {
+    if (currentBullet > 1) {
+      setCurrentBullet(currentBullet - 1);
+    }
   };
 
   const resetProgress = () => {
     setCompletedBullets([]);
     setNextBullet(1);
+    setIsModalOpen(false);
+    setCurrentBullet(null);
     localStorage.removeItem('bulletProgress');
   };
 
@@ -143,10 +165,28 @@ function App() {
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>Message {currentBullet}</h2>
-            <p>{bulletMessages[currentBullet]}</p>
-            <button className="ok-button" onClick={closeModal}>
-              OK
-            </button>
+            <div className="modal-message">
+              <p>{bulletMessages[currentBullet]}</p>
+            </div>
+            <div className="modal-navigation">
+              <button 
+                className="nav-button prev-button" 
+                onClick={goToPrevious}
+                disabled={currentBullet === 1}
+              >
+                Previous
+              </button>
+              <button className="ok-button" onClick={closeModal}>
+                OK
+              </button>
+              <button 
+                className="nav-button next-button" 
+                onClick={goToNext}
+                disabled={currentBullet === 21}
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       )}
