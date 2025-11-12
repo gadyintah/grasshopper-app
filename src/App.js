@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import logo from './logo.svg';
 import './App.css';
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentBullet, setCurrentBullet] = useState(null);
+  const [completedBullets, setCompletedBullets] = useState([]);
+  const [nextBullet, setNextBullet] = useState(1);
 
   // Messages for each bullet
   const bulletMessages = {
@@ -31,27 +33,77 @@ function App() {
     21: "Final message: The best is yet to come!"
   };
 
+  // Load progress from localStorage on component mount
+  useEffect(() => {
+    const savedProgress = localStorage.getItem('bulletProgress');
+    if (savedProgress) {
+      const progress = JSON.parse(savedProgress);
+      setCompletedBullets(progress.completed || []);
+      setNextBullet(progress.next || 1);
+    }
+  }, []);
+
+  // Save progress to localStorage whenever it changes
+  useEffect(() => {
+    const progress = {
+      completed: completedBullets,
+      next: nextBullet
+    };
+    localStorage.setItem('bulletProgress', JSON.stringify(progress));
+  }, [completedBullets, nextBullet]);
+
   const openModal = (bulletNumber) => {
-    setCurrentBullet(bulletNumber);
-    setIsModalOpen(true);
+    // Only allow clicking the next bullet in sequence
+    if (bulletNumber === nextBullet) {
+      setCurrentBullet(bulletNumber);
+      setIsModalOpen(true);
+    }
   };
 
   const closeModal = () => {
+    if (currentBullet) {
+      // Mark current bullet as completed and set next bullet
+      setCompletedBullets(prev => [...prev, currentBullet]);
+      setNextBullet(prev => prev + 1);
+    }
     setIsModalOpen(false);
     setCurrentBullet(null);
   };
 
-  // Create 21 bullets
+  const resetProgress = () => {
+    setCompletedBullets([]);
+    setNextBullet(1);
+    localStorage.removeItem('bulletProgress');
+  };
+
+  // Check if all bullets are completed
+  const allCompleted = nextBullet > 21;
+
+  // Create 21 bullets with proper styling based on state
   const renderBullets = () => {
     const bullets = [];
     for (let i = 1; i <= 21; i++) {
+      const isCompleted = completedBullets.includes(i);
+      const isNext = i === nextBullet;
+      const isLocked = i > nextBullet;
+
+      let bulletClass = "bullet";
+      if (isCompleted) {
+        bulletClass += " completed";
+      } else if (isNext) {
+        bulletClass += " next";
+      } else if (isLocked) {
+        bulletClass += " locked";
+      }
+
       bullets.push(
         <div
           key={i}
-          className="bullet"
+          className={bulletClass}
           onClick={() => openModal(i)}
         >
           {i}
+          {isCompleted && <span className="checkmark">✓</span>}
         </div>
       );
     }
@@ -62,26 +114,27 @@ function App() {
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
         
-        {/* Card Section Added Below Default Content */}
+        {/* Progress Indicator */}
+        <div className="progress-info">
+          <p>Progress: {completedBullets.length}/21 completed</p>
+          {!allCompleted && <p>Next: Bullet {nextBullet}</p>}
+          {allCompleted && <p className="completed-message">🎉 All bullets completed! 🎉</p>}
+        </div>
+
+        {/* Card Section */}
         <div className="card-section">
-          <h2 className="card-title">21 Bullets Collection</h2>
+          <h2 className="card-title">21 expectations moving forward our first meeting after more than 7 years</h2>
           <div className="card">
             <div className="bullets-grid">
               {renderBullets()}
             </div>
           </div>
+          
+          {/* Reset Button */}
+          <button className="reset-button" onClick={resetProgress}>
+            Reset Progress
+          </button>
         </div>
       </header>
 
